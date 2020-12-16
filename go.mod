@@ -9,7 +9,7 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/shirou/gopsutil v2.20.2+incompatible // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
-	github.com/synerex/proto_grideye v0.0.1
+	github.com/synerex/proto_grideye v0.0.2
 	github.com/synerex/synerex_api v0.3.1
 	github.com/synerex/synerex_proto v0.1.6
 	github.com/synerex/synerex_sxutil v0.4.9
