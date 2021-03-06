@@ -158,6 +158,14 @@ func atoFloat32(s string) float32 {
 	return float32(r)
 }
 
+func atoFloat64(s string) float64 {
+	r, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		log.Print("err", err)
+	}
+	return float64(r)
+}
+
 func getHourMin(dt string) (hour int, min int) {
 	st := strings.Split(dt, ":")
 	hour, _ = strconv.Atoi(st[0])
@@ -195,11 +203,19 @@ func sendingGridEyeFile(client *sxutil.SXServiceClient) {
 	for scanner.Scan() { // read one line.
 		dt := scanner.Text()
 		token := strings.Split(dt, ",")
+		//		fmt.Println("Tokens:", token[0], token[1], token[2], token[3], token[4], token[5], token[6], token[10], token[11])
 
-		switch token[3] {
+		// check Device only from GE-0~3
+		dn := strings.Split(token[1], "-")
+		devNum, _ := strconv.Atoi(dn[1])
+		if devNum >= 4 {
+			continue
+		}
+
+		switch token[2] {
 		case "alive":
 		case "counter":
-			//			fmt.Println(token[0], token[1], token[2], token[3], token[4], token[5], token[6])
+		case "raspitoi1":
 			tm, _ := time.Parse(dateFmt, token[0]) // RFC3339Nano
 			// check timestamp of data
 			if !started {
@@ -219,76 +235,83 @@ func sendingGridEyeFile(client *sxutil.SXServiceClient) {
 			}
 
 			tp, _ := ptypes.TimestampProto(tm)
-			temps := make([]float32, 64)
+			temps := make([]float64, 64)
+			tempToken := strings.Split(token[11][1:len(token[11])-1], " ")
 			for j := 0; j < 64; j++ {
-				temps[j] = atoFloat32(token[j+5])
+				temps[j] = atoFloat64(tempToken[j])
 			}
 			evt := &grideye.GridEyeEvent{
-				Typ:   token[3],
+				Typ:   token[8],
 				Ts:    tp,
-				Seq:   atoUint64(token[2]),
-				Id:    token[4],
+				Seq:   atoUint64(token[10]),
+				Id:    token[9],
 				Temps: temps,
 			}
 			evts = append(evts, evt)
-		default: // this might come first // IP address
-			//			log.Printf("%s:%s",token[3], dt)
-			if !started {
-				continue
+			sq, _ := strconv.Atoi(token[6])
+
+			ge = &grideye.GridEye{
+				Ts:       tp,
+				DeviceId: token[1],
+				Hostname: token[2],
+				Location: token[3],
+				Mac:      token[4],
+				Ip:       token[5],
+				Seq:      uint64(sq),
+				Data:     evts,
 			}
-			if ge != nil {
-				//				sendPacket(ge)
-				if len(evts) > 0 {
-					if *multi == 1 { // sending each packets
-						ge.Data = evts
-						out, _ := proto.Marshal(ge)
+			//			log.Printf("%s:%s", token[3], dt)
+
+			//			log.Print("Grid::::")
+			if len(evts) > 0 {
+				if *multi == 1 { // sending each packets
+					out, _ := proto.Marshal(ge)
+					//					log.Printf("grid_final: len %d", len(out))
+					cont := pb.Content{Entity: out}
+					smo := sxutil.SupplyOpts{
+						Name:  "GridEye",
+						Cdata: &cont,
+					}
+					_, nerr := client.NotifySupply(&smo)
+					if nerr != nil {
+						log.Printf("Send Fail! %v\n", nerr)
+					} else {
+						//						log.Printf("Sent OK! %#v\n", ge)
+					}
+					if *speed < 0 { // sleep for each packet
+						time.Sleep(time.Duration(-*speed) * time.Millisecond)
+					}
+
+				} else { // sending multiple packets
+					mcount++
+					ge.Data = evts
+					ges = append(ges, ge)
+					if mcount > *multi { // now sending!
+						gess := &grideye.GridEyes{
+							Messages: ges,
+						}
+						out, _ := proto.Marshal(gess)
 						cont := pb.Content{Entity: out}
 						smo := sxutil.SupplyOpts{
-							Name:  "GridEye",
+							Name:  "GridEyeMulti",
 							Cdata: &cont,
 						}
 						_, nerr := client.NotifySupply(&smo)
 						if nerr != nil {
 							log.Printf("Send Fail! %v\n", nerr)
 						} else {
-							//						log.Printf("Sent OK! %#v\n", ge)
+							log.Printf("Sent OK! %d bytes: %s\n", len(out), ptypes.TimestampString(ge.Ts))
 						}
-						if *speed < 0 { // sleep for each packet
+						if *speed < 0 {
 							time.Sleep(time.Duration(-*speed) * time.Millisecond)
 						}
-
-					} else { // sending multiple packets
-						mcount++
-						ge.Data = evts
-						ges = append(ges, ge)
-						if mcount > *multi { // now sending!
-							gess := &grideye.GridEyes{
-								Messages: ges,
-							}
-							out, _ := proto.Marshal(gess)
-							cont := pb.Content{Entity: out}
-							smo := sxutil.SupplyOpts{
-								Name:  "GridEyeMulti",
-								Cdata: &cont,
-							}
-							_, nerr := client.NotifySupply(&smo)
-							if nerr != nil {
-								log.Printf("Send Fail! %v\n", nerr)
-							} else {
-								log.Printf("Sent OK! %d bytes: %s\n", len(out), ptypes.TimestampString(ge.Ts))
-							}
-							if *speed < 0 {
-								time.Sleep(time.Duration(-*speed) * time.Millisecond)
-							}
-							ges = make([]*grideye.GridEye, 0, 1)
-							mcount = 0
-						}
+						ges = make([]*grideye.GridEye, 0, 1)
+						mcount = 0
 					}
 				}
-
 			}
+
 			evts = make([]*grideye.GridEyeEvent, 0, 1)
-			ge = &grideye.GridEye{}
 			tm, er := time.Parse(dateFmt, token[0])
 			if er != nil {
 				log.Printf("Time parse error! %v  %v", tm, er)
@@ -305,12 +328,13 @@ func sendingGridEyeFile(client *sxutil.SXServiceClient) {
 				last = tm
 			}
 
-			tp, _ := ptypes.TimestampProto(tm)
-			ge.Ts = tp
-			ge.Hostname = token[1]
-			ge.DeviceId = token[2]
-			ge.Mac = token[2]
-			ge.Ip = token[3]
+			//			tp, _ := ptypes.TimestampProto(tm)
+			/*			ge.Ts = tp
+						ge.Hostname = token[1]
+						ge.DeviceId = token[2]
+						ge.Mac = token[2]
+						ge.Ip = token[3]
+			*/
 		}
 	}
 

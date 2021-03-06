@@ -47,6 +47,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/synerex/proto_grideye v0.0.1 h1:wQBvCiZlyl5Z/TY0oWlzE5tCYokzRFx+91nJEphQZI4=
 github.com/synerex/proto_grideye v0.0.1/go.mod h1:YeMEbpnjNw19LipVM9NByxniMzTiigoVXxZYoPIO5Ow=
+github.com/synerex/proto_grideye v0.0.2 h1:THmatsqabyAKTJsz7wSp2FUorDO8XPcnH7TrbhTxnDw=
+github.com/synerex/proto_grideye v0.0.2/go.mod h1:YeMEbpnjNw19LipVM9NByxniMzTiigoVXxZYoPIO5Ow=
 github.com/synerex/synerex_api v0.3.1 h1:fmxQhVaag/OUJELNoBxhebZ5Z23/cgfCNdYGl9XUY3g=
 github.com/synerex/synerex_api v0.3.1/go.mod h1:sVqiujIdRBLEtKGw4pKjNK3SPgK0ymTlLWL8Drf266A=
 github.com/synerex/synerex_nodeapi v0.5.3 h1:qBpHwys9jPzhn0M50MSckFWKb6tps23M8q5TJj/CsNw=
