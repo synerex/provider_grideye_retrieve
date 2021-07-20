@@ -215,7 +215,7 @@ func sendingGridEyeFile(client *sxutil.SXServiceClient) {
 		switch token[2] {
 		case "alive":
 		case "counter":
-		case "raspitoi1":
+		default:
 			tm, _ := time.Parse(dateFmt, token[0]) // RFC3339Nano
 			// check timestamp of data
 			if !started {
