@@ -205,13 +205,6 @@ func sendingGridEyeFile(client *sxutil.SXServiceClient) {
 		token := strings.Split(dt, ",")
 		//		fmt.Println("Tokens:", token[0], token[1], token[2], token[3], token[4], token[5], token[6], token[10], token[11])
 
-		// check Device only from GE-0~3
-		dn := strings.Split(token[1], "-")
-		devNum, _ := strconv.Atoi(dn[1])
-		if devNum >= 4 {
-			continue
-		}
-
 		switch token[2] {
 		case "alive":
 		case "counter":
