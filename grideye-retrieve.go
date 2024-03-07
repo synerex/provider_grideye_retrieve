@@ -233,12 +233,18 @@ func sendingGridEyeFile(client *sxutil.SXServiceClient) {
 			for j := 0; j < 64; j++ {
 				temps[j] = atoFloat64(tempToken[j])
 			}
+			audioSpectrums := make([]uint32, 128)
+			audioSpectrumToken := strings.Split(token[12][1:len(token[12])-1], " ")
+			for j := 0; j < 128; j++ {
+				audioSpectrums[j] = atoUint(audioSpectrumToken[j])
+			}
 			evt := &grideye.GridEyeEvent{
-				Typ:   token[8],
-				Ts:    tp,
-				Seq:   atoUint64(token[10]),
-				Id:    token[9],
-				Temps: temps,
+				Typ:           token[8],
+				Ts:            tp,
+				Seq:           atoUint64(token[10]),
+				Id:            token[9],
+				Temps:         temps,
+				AudioSpectrum: audioSpectrums,
 			}
 			evts = append(evts, evt)
 			sq, _ := strconv.Atoi(token[6])
